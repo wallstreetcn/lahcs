@@ -16,10 +16,10 @@ def transform(read_model, write_model, xfr, src_path, tar_path, err_path, logger
         else:
             err_record[err_key] = [1, err_desc, linum]
 
-    logger.info('''transform starting ...
-        source file: %s
-        target file: %s
-        error  file: %s''' % (src_path, tar_path, err_path))
+    logger.info('transform starting ...\n'
+        'source file: %s\n'
+        'target file: %s\n'
+        'error  file: %s' % (src_path, tar_path, err_path))
 
     with open(src_path, 'r') as src_file, \
          open(tar_path, 'w') as tar_file, \
@@ -70,7 +70,7 @@ def transform(read_model, write_model, xfr, src_path, tar_path, err_path, logger
     err_explains = '\n'.join('count: %-4d linum: %-4d  %s' % (cnt, linum, err_desc) 
                                 for err_key, (cnt, err_desc, linum) in err_record.items())
 
-    logger.info('transform end, error count %d \n%s' % (err_cnt, err_explains))
+    logger.info('transform end. \nerror count %d \n%s' % (err_cnt, err_explains))
     return err_cnt
 
 

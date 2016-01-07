@@ -133,20 +133,22 @@ class String(WriteField):
 
     def dump(self, content):
         if isinstance(content, str):
-            if self.max_length >= 0 and len(content) > self.max_length:
-                raise FieldParseError('content length exceed the max_length of String field')
-            if not self.null and not content:
-                raise FieldParseError('content is null while String field is not allowed')
-            if self.regex_compiled and not self.regex_compiled.match(content):
-                raise FieldParseError('content not match with regex of String field')
-            if self.check and not self.check(number):
-                raise FieldParseError('content do not accepted by user defined function' )
-            return content
+            s = content
+        elif content is None:
+            s = ''
+        else:
+            raise FieldParseError('content type %s for String field' % content.__class__.__name__)
 
-        elif self.null and content is None:
-            return ''
+        if not s and not self.null:
+            raise FieldParseError('content is null while null is not allowed')
+        if len(s) > self.max_length >= 0:
+            raise FieldParseError('content length exceed the max_length of String field')
+        if self.regex_compiled and not self.regex_compiled.match(s):
+            raise FieldParseError('content not match with regex of String field')
+        if self.check and not self.check(s):
+            raise FieldParseError('content do not accepted by user defined function' )
 
-        raise FieldParseError('content type %s for String field' % content.__class__.__name__)
+        return s
 
 
 class BaseIntegerWriteField(WriteField):
@@ -164,10 +166,7 @@ class BaseIntegerWriteField(WriteField):
     def dump(self, content):
         if isinstance(content, str):
             if not content:
-                if self.null:
-                    number = None
-                else:
-                    raise FieldParseError('content is null while null is not allowed')
+                number = None
             else:
                 try: 
                     number = int(content)
@@ -178,28 +177,26 @@ class BaseIntegerWriteField(WriteField):
             number = content
 
         elif content is None:
-            if self.null:
-                number = content
-            else:
-                raise FieldParseError('content is null while null is not allowed')
+            number = content
 
         else:
             raise FieldParseError('content type %s for Integer Field' % content.__class__.__name__)
 
+        if number is None:
+            if not self.null:
+                raise FieldParseError('content is null while null is not allowed')
+        else:
+            if self.unsigned:
+                if not( self.UNSIGNED_INTEGER_RANGE[0] <= number <= self.UNSIGNED_INTEGER_RANGE[1] ): 
+                   raise FieldParseError('number exceed range of unsigned %s' % self.__class__.__name__ )
+            else:
+                if not( self.SIGNED_INTEGER_RANGE[0] <= number <= self.SIGNED_INTEGER_RANGE[1] ): 
+                   raise FieldParseError('number exceed range of %s' % self.__class__.__name__ )
+
         if self.check and not self.check(number):
             raise FieldParseError('content do not accepted by user defined function' )
 
-        if number is None:
-            return ''
-
-        if self.unsigned:
-            if not( self.UNSIGNED_INTEGER_RANGE[0] <= number <= self.UNSIGNED_INTEGER_RANGE[1] ): 
-               raise FieldParseError('number exceed range of unsigned %s' % self.__class__.__name__ )
-        else:
-            if not( self.SIGNED_INTEGER_RANGE[0] <= number <= self.SIGNED_INTEGER_RANGE[1] ): 
-               raise FieldParseError('number exceed range of %s' % self.__class__.__name__ )
-
-        return str(number)
+        return str(number) if number is not None else ''
 
 
 class TinyInt(BaseIntegerWriteField):
@@ -238,10 +235,7 @@ class BaseFloatWriteField(WriteField):
     def dump(self, content):
         if isinstance(content, str):
             if not content:
-                if self.null:
-                    number = None
-                else:
-                    raise FieldParseError('content is null while null is not allowed')
+                number = None
             else:
                 try: 
                     number = float(content)
@@ -250,33 +244,29 @@ class BaseFloatWriteField(WriteField):
 
         elif isinstance(content, float):
             number = content
-
         elif isinstance(content, int):
             number = content
-
         elif content is None:
-            if self.null:
-                number = content
-            else:
-                raise FieldParseError('content is null while null is not allowed')
-
+            number = content
         else:
             raise FieldParseError('content type %s for Float Field' % content.__class__.__name__)
+
+        if number is None:
+            if not self.null:
+                raise FieldParseError('content is null while null is not allowed')
+        else:
+            if self.unsigned:
+                if not( self.UNSIGNED_Float_RANGE[0] <= number <= self.UNSIGNED_Float_RANGE[1] ): 
+                   raise FieldParseError('number exceed range of unsigned %s' % self.__class__.__name__ )
+            else:
+                if not( self.SIGNED_Float_RANGE[0] <= number <= self.SIGNED_Float_RANGE[1] ): 
+                   raise FieldParseError('number exceed range of %s' % self.__class__.__name__ )
 
         if self.check and not self.check(number):
             raise FieldParseError('content do not accepted by user defined function' )
 
-        if number is None:
-            return ''
+        return str(number) if number is not None else ''
 
-        if self.unsigned:
-            if not( self.UNSIGNED_Float_RANGE[0] <= number <= self.UNSIGNED_Float_RANGE[1] ): 
-               raise FieldParseError('number exceed range of unsigned %s' % self.__class__.__name__ )
-        else:
-            if not( self.SIGNED_Float_RANGE[0] <= number <= self.SIGNED_Float_RANGE[1] ): 
-               raise FieldParseError('number exceed range of %s' % self.__class__.__name__ )
-
-        return str(number)
 
 class Float(BaseFloatWriteField):
     '''Float'''
@@ -304,10 +294,7 @@ class Decimal(WriteField):
     def dump(self, content):
         if isinstance(content, str):
             if not content:
-                if self.null:
-                    number = None
-                else:
-                    raise FieldParseError('content is null while null is not allowed')
+                number = None
             else:
                 try: 
                     number = decimal.Decimal(content)
@@ -316,32 +303,26 @@ class Decimal(WriteField):
 
         elif isinstance(content, float):
             number = content
-
         elif isinstance(content, int):
             number = content
-
         elif content is None:
-            if self.null:
-                number = content
-            else:
-                raise FieldParseError('content is null while null is not allowed')
-
+            number = content
         else:
             raise FieldParseError('content type %s for Decimal Field' % content.__class__.__name__)
+
+        if number is None:
+            if not self.null:
+                raise FieldParseError('content is null while null is not allowed')
+        else:
+            if self.unsigned and number < 0:
+                raise FieldParseError('number exceed range of unsigned %s' % self.__class__.__name__ )
+            if abs(int(number)) >= 10**(m-d):
+                raise FieldParseError('number exceed range of %s' % self.__class__.__name__ )
 
         if self.check and not self.check(number):
             raise FieldParseError('content do not accepted by user defined function' )
 
-        if number is None:
-            return ''
-
-        if self.unsigned and number < 0:
-            raise FieldParseError('number exceed range of unsigned %s' % self.__class__.__name__ )
-
-        if abs(int(number)) >= 10**(m-d):
-            raise FieldParseError('number exceed range of %s' % self.__class__.__name__ )
-
-        return str(number)
+        return str(number) if number is not None else ''
 
 
 class Date(WriteField):
@@ -356,10 +337,7 @@ class Date(WriteField):
     def dump(self, content):
         if isinstance(content, str):
             if not content:
-                if self.null:
-                    dt = None
-                else:
-                    raise FieldParseError('content is null while null is not allowed')
+                dt = None
             else:
                 try:
                     dt = datetime.datetime.strptime(content, self.format).date()
@@ -368,23 +346,19 @@ class Date(WriteField):
 
         elif isinstance(content, datetime.date):
             dt = content
-
         elif content is None:
-            if self.null:
-                dt = content
-            else:
-                raise FieldParseError('content is null while null is not allowed')
-
+            dt = content
         else:
             raise FieldParseError('content type %s for Date Field' % content.__class__.__name__)
+
+        if dt is None:
+            if not self.null:
+                raise FieldParseError('content is null while null is not allowed')
 
         if self.check and not self.check(dt):
             raise FieldParseError('content do not accepted by user defined function' )
 
-        if dt is None:
-            return ''
-
-        return dt.strftime('%Y-%m-%d')
+        return dt.strftime('%Y-%m-%d') if dt is not None else ''
 
 
 class Timestamp(WriteField):
@@ -399,10 +373,7 @@ class Timestamp(WriteField):
     def dump(self, content):
         if isinstance(content, str):
             if not content:
-                if self.null:
-                    ts = None
-                else:
-                    raise FieldParseError('content is null while null is not allowed')
+                ts = None
             else:
                 try:
                     ts = datetime.datetime.strptime(content, self.format)
@@ -411,23 +382,17 @@ class Timestamp(WriteField):
 
         elif isinstance(content, datetime.datetime):
             ts = content
-
         elif content is None:
-            if self.null:
-                ts = content
-            else:
-                raise FieldParseError('content is null while null is not allowed')
-
+            ts = content
         else:
             raise FieldParseError('content type %s for Timestamp Field' % content.__class__.__name__)
+
+        if ts is None:
+            if not self.null:
+                raise FieldParseError('content is null while null is not allowed')
 
         if self.check and not self.check(ts):
             raise FieldParseError('content do not accepted by user defined function' )
 
-        if ts is None:
-            return ''
-
-        return ts.strftime('%Y-%m-%d %H:%M:%S')
-
-
+        return ts.strftime('%Y-%m-%d %H:%M:%S') if ts is not None else ''
 
