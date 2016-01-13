@@ -1,3 +1,4 @@
+import logging
 from queue import Queue
 from collections import OrderedDict
 
@@ -6,8 +7,9 @@ from lahcs.models.fields import (FieldError, )
 from lahcs.core.exceptions import XfrError
 
 
-def transform(read_model, write_model, xfr, src_path, tar_path, err_path, logger):
+def transform(read_model, write_model, xfr, src_path, tar_path, err_path):
     '''return err_cnt'''
+    logger = logging.getLogger('lahcs.core.op.transform')
 
     err_record = OrderedDict()
     def err_put(err_key, err_desc, linum):
